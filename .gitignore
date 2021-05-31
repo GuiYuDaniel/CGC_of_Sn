@@ -1,5 +1,5 @@
 #
-test/
+*/__pytest_cache__/
 result/
 logs/
 .idea/
