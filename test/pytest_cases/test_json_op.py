@@ -19,17 +19,18 @@ class TestJson(object):
         self.fake_path = Path._get_full_path(relative_path="fake", base_path_type="test")  # 此处没使用config避免循环引用
         self.whereami_file_path = os.path.join(self.fake_path, "fake_workflow_whereami.json")
         self.answer_whereami = [{"name": "first_node",
-                                 "func": ["None.test.fake,fake_core", "where_am_i", ""],
+                                 "func": ["None.test.fake.fake_core", "where_am_i", ""],
                                  "type": "cold",
-                                 "inputs": ["input:cmd_params"],
-                                 "outputs": ["output:results"],
+                                 "inputs": ["cmd_params"],
+                                 "outputs": ["results"],
                                  "extra_args": [],
                                  "extra_kwargs": {},
+                                 "next_nodes": [],
                                  "flags": []}]
         self.answer_workflow1_file_path = os.path.join(self.fake_path, "fake_json_with_comments1.json")
         self.answer_workflow1 = \
             [{"name": "first_node",
-              "func": ["None.test.fake,fake_core", "where_am_i", ""],
+              "func": ["None.test.fake.fake_core", "where_am_i", ""],
               "type": None,
               "inputs": ["input:cmd_params"],
               "outputs": ["output:results"],
@@ -48,7 +49,7 @@ class TestJson(object):
         self.answer_workflow1_with_comments = \
             ["### a fix dict start 1 ###",
              {"name": "first_node",
-              "func": ["None.test.fake,fake_core", "where_am_i", ""],
+              "func": ["None.test.fake.fake_core", "where_am_i", ""],
               "type": None,
               "inputs": ["input:cmd_params"],
               "outputs": ["output:results"],
@@ -73,7 +74,7 @@ class TestJson(object):
         self.answer_workflow2 = \
             {
              "fix_dict": {"name": "first_node",
-                          "func": ["None.test.fake,fake_core", "where_am_i", ""],
+                          "func": ["None.test.fake.fake_core", "where_am_i", ""],
                           "type": "cold",
                           "inputs": ["input:cmd_params"],
                           "outputs": ["output:results"],
@@ -91,7 +92,7 @@ class TestJson(object):
         self.answer_workflow2_with_comments = \
             {"### a fix dict start ###": "1",
              "fix_dict": {"name": "first_node",
-                          "func": ["None.test.fake,fake_core", "where_am_i", ""],
+                          "func": ["None.test.fake.fake_core", "where_am_i", ""],
                           "type": "cold",
                           "inputs": ["input:cmd_params"],
                           "outputs": ["output:results"],

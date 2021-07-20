@@ -1,12 +1,13 @@
 [
     {
         "name": "first_node",
-        "func": ["None.test.fake,fake_core", "where_am_i", ""],
+        "func": ["None.test.fake.fake_core", "where_am_i", ""],
         "type": "cold",
-        "inputs": ["input:cmd_params"],
-        "outputs": ["output:results"],
+        "inputs": ["cmd_params"],
+        "outputs": ["results"],
         "extra_args": [],
         "extra_kwargs": {},
+        "next_nodes": [],
         "flags": []
     }
 ]

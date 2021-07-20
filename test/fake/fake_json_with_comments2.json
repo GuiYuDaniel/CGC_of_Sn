@@ -1,7 +1,7 @@
 {
     "### a fix dict start ###": "1",
     "fix_dict": {"name": "first_node",
-                 "func": ["None.test.fake,fake_core", "where_am_i", ""],
+                 "func": ["None.test.fake.fake_core", "where_am_i", ""],
                  "type": "cold",
                  "inputs": ["input:cmd_params"],
                  "outputs": ["output:results"],

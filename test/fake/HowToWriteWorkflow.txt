@@ -1,0 +1,23 @@
+workflow是规定pipeline按照什么顺序，执行哪些函数的定义文件
+
+1，workflow必须是关于节点的一个有向无环图（DAG）
+2，请使用json编写workflow（可使用https://www.json.cn，https://www.bejson.com等网站校验json）
+3，格式为[{每个节点的信息},...,"###注释###",...]
+4，其中，注释可以使用前后各三个#包围的str格式，解析后会自动滤掉
+5，每个参数的说明：
+    name: 节点的名字（str），请保证该名字全局唯一
+    func: [函数文件相对位置（str）, 函数名（str）, 函数别名（str）]
+        函数文件相对位置：None.顶层目录后的位置
+        函数名：就是本节点希望调用的函数
+        函数别名：python支持from xxx import yyy as zzz，就是这个zzz
+    type: 目前仅支持"cold"模式
+    inputs: [函数的输入（str）,...]
+    outputs: [函数的输出（str）,...]
+        支持三段式命名,中间用:隔开，例如"param1:::flag:flag_name"
+            第一段，param: 用于区分多个节点间，输入输出重名的情况，加上它后，就是全局唯一了
+            第二段，函数输入或输出的变量的名字
+            第三段，有时候函数1的输出叫A，函数2需要这个作为参数输入，但定义里叫做B，这时候就可以使用A:B解决
+    extra_args: [就是python中定义的*args]
+    extra_kwargs: {就是python中定义的**kwargs},
+    next_nodes: [直接指向的后续节点（str）,...]
+    flags: [] 暂未开放该功能

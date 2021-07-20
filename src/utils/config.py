@@ -12,6 +12,7 @@ class Config(object):
     """
 
     def __init__(self):
+        # TODO 这种不太希望外部调用时随意修改的属性，未来根据需要可以加上property装饰器
         # general conf
         self.name = None
         self.version = None

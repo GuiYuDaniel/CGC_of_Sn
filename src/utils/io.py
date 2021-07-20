@@ -61,14 +61,16 @@ class Path(object):
         """
         pass
 
-    @staticmethod
-    def test_os():
-        return os.path.abspath(__file__), os.getcwd()
-
 
 class Save(object):
+    """
+    save data
+    """
     pass
 
 
 class Load(object):
+    """
+    load data
+    """
     pass
