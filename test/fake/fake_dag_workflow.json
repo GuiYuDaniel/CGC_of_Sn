@@ -60,7 +60,7 @@
     },
     {
         "name": "f6",
-        "func": ["None.test.fake.fake_core", "merge", ""],
+        "func": ["None.test.fake.fake_core", "merge", "merge_merge"],
         "type": "cold",
         "inputs": ["pw_name", "path"],
         "outputs": ["rst"],

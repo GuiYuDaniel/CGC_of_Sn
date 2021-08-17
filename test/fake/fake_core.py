@@ -67,3 +67,21 @@ def what_is_the_time_now(flag=True):
     else:
         return False
     return asc_time
+
+
+def output_str_func():
+    # 这个函数python里是可以给他传空tuple的
+    # 这个函数就用无参数传入测，后面的测试还是用标准函数化的方式测
+    return "this is str"
+
+
+def is_input_str_func(string):
+    return True if isinstance(string, str) else False
+
+
+def output_all_str_func(flag):
+    return "this is str 1", "this is str 2"
+
+
+def is_input_all_str_func(*args):
+    return True if all(isinstance(i, str) for i in args) else False

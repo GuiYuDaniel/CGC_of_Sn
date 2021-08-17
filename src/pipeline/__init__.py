@@ -11,6 +11,6 @@ pipetask负责循环体调度
 
 调用时：
 ppl = Pipeline(conf)  # 创建ppl
-ppk = Pipetask(ppl)  # 创建ppk
-rst = ppk.start(inputs_of_first_node)  # 执行
+ppt = Pipetask(ppl)  # 创建ppk
+rst = ppt.start(inputs_of_first_node)  # 执行
 """

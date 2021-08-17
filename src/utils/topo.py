@@ -27,17 +27,17 @@ def calc_dag(workflow_conf):
         if not node_name:
             err_msg = "dict in {} must have key name".format(single_dict)
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         next_nodes = single_dict.get("next_nodes")
         if not isinstance(next_nodes, list):
             err_msg = "next_nodes in {} must be a list".format(single_dict)
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         unlaw_nodes = [i for i in next_nodes if not isinstance(i, str)]
         if unlaw_nodes:
             err_msg = "these next nodes={} in {} must str".format(unlaw_nodes, single_dict)
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         dag_dict[node_name] = {"next_nodes": next_nodes, "prep_nodes": []}
     # 根据next_nodes回填出prep_nodes
     node_name_list = list(dag_dict.keys())
@@ -48,7 +48,7 @@ def calc_dag(workflow_conf):
                 err_msg = "next node={} defined in next_nodes={} do not in all node name list={}".format(
                     single_next_node, next_nodes, node_name_list)
                 logger.error(err_msg)
-                raise err_msg
+                raise Exception(err_msg)
             dag_dict[single_next_node]["prep_nodes"].append(node_name)
     # 注意，虽然dag有了，但dict本身是无序的
     return dag_dict
@@ -89,7 +89,7 @@ def calc_topo_order(dag_dict):
             err_msg = "topo_order_list={}, and no null list in next dag_dict={}, pls check".format(
                 topo_order_list, dag_dict)
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         topo_order_list += no_input_nodes
         for i in no_input_nodes:
             next_nodes = dag_dict.get(i).get("next_nodes", [])
@@ -99,20 +99,20 @@ def calc_topo_order(dag_dict):
                               "{} next nodes is {},\n" \
                               "but node {} not in dag={}".format(i, next_nodes, j, dag_dict)
                     logger.error(err_msg)
-                    raise err_msg
+                    raise Exception(err_msg)
                 if not dag_dict.get(j).get("prep_nodes"):
                     err_msg = "DAG unlaw:\n" \
                               "{} next nodes is {},\n" \
                               "but node {} in dag={} not have key prep_nodes".format(i, next_nodes, j, dag_dict)
                     logger.error(err_msg)
-                    raise err_msg
+                    raise Exception(err_msg)
                 if i not in dag_dict.get(j).get("prep_nodes"):
                     err_msg = "DAG unlaw:\n" \
                               "{} next nodes is {},\n" \
                               "but node {} in dag={} with prep_nodes={} not have {}".format(
                                   i, next_nodes, j, dag_dict, dag_dict.get(j).get("prep_nodes"), i)
                     logger.error(err_msg)
-                    raise err_msg
+                    raise Exception(err_msg)
                 dag_dict[j]["prep_nodes"].remove(i)
             del dag_dict[i]
     return topo_order_list

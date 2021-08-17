@@ -12,7 +12,6 @@ class Config(object):
     """
 
     def __init__(self):
-        # TODO 这种不太希望外部调用时随意修改的属性，未来根据需要可以加上property装饰器
         # general conf
         self.name = None
         self.version = None
@@ -29,14 +28,26 @@ class Config(object):
         self.workflow_config = None
 
         # system conf
-        self.top_path = Path._get_top_path()
-        self.src_path = Path._get_full_path(base_path_type="src")
-        self.test_path = Path._get_full_path(base_path_type="test")
+        self._top_path = Path._get_top_path()
+        self._src_path = Path._get_full_path(base_path_type="src")
+        self._test_path = Path._get_full_path(base_path_type="test")
 
         default_config = self._load_default_config()
         self._add_default_config(default_config)
         self._add_cmd_config()
         pass
+
+    @property
+    def top_path(self):
+        return self._top_path
+
+    @property
+    def src_path(self):
+        return self._src_path
+
+    @property
+    def test_path(self):
+        return self._test_path
 
     @staticmethod
     def _load_default_config():

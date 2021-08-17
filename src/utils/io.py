@@ -29,11 +29,11 @@ class Path(object):
         if not isinstance(relative_path, str):
             err_msg = "relative_path={} should be str".format(relative_path)
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         if base_path_type not in list(base_path_type_dict.keys()):
             err_msg = "base_path_type={} should be in {}".format(base_path_type, list(base_path_type_dict.keys()))
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         base_path = cls._get_top_path()
         full_path = os.path.join(base_path, base_path_type_dict.get(base_path_type), relative_path)
         return full_path

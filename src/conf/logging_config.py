@@ -11,11 +11,11 @@ logging_config = {
             "format": "%(levelname)s %(message)s"
         },
         "standard": {
-            "format": "[%(asctime)s] %(levelname)s [%(funcName)s:%(lineno)d] %(message)s",
+            "format": "[%(asctime)s] %(levelname)s %(message)s [%(funcName)s:%(lineno)d]",
             "datefmt": "%Y-%m-%d %H:%M:%S"
         },
         "verbose": {
-            "format": "[%(asctime)s] %(levelname)s [%(filename)s:%(funcName)s:%(lineno)d] %(message)s",
+            "format": "[%(asctime)s] %(levelname)s %(message)s [%(filename)s:%(funcName)s:%(lineno)d]",
             "datefmt": "%Y-%m-%d %H:%M:%S"
         }
     },

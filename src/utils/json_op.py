@@ -24,11 +24,11 @@ class Json(object):
         if not isinstance(file_path, str):
             err_msg = "file_path={} must be string".format(file_path)
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         if os.path.exists(file_path) is False or os.path.isfile(file_path) is False:
             err_msg = "file_path={} not exist or not file, pls check".format(file_path)
             logger.error(err_msg)
-            raise err_msg
+            raise Exception(err_msg)
         with open(file_path, 'rt', encoding='UTF-8') as f:
             data = f.read()
             try:
