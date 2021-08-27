@@ -7,7 +7,7 @@ pipeline负责作业的调度模块，
 
 pipeline负责构建整体计算图
 pipenode负责构建单个计算节点
-pipetask负责循环体调度
+pipetask负责执行以及调度
 
 调用时：
 ppl = Pipeline(conf)  # 创建ppl

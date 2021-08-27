@@ -66,15 +66,28 @@ class TestFunc(object):
         # self.fake_wfl_output_str = os.path.join(self.fake_path, "fake_workflow_output_str.json")
         # self.fake_wfl_output_str_conf = Json.file_to_json_without_comments(self.fake_wfl_output_str)
 
-    def test_easy_output_str_func(self):
+    def test_easy_output_str_func_1(self):
         # 这个是抽出来的核心机制
         exec("from test.fake.fake_core import output_str_func")
         exec("from test.fake.fake_core import is_input_str_func")
         func_1 = eval("output_str_func")
         func_2 = eval("is_input_str_func")
         output_1 = func_1()
-        output_1 = tuple([output_1])
-        output_2 = func_2(*output_1)
+        output_1_tuple = tuple([output_1])
+        output_1_dict = {}
+        output_2 = func_2(*output_1_tuple, **output_1_dict)
+        assert output_2
+
+    def test_easy_output_str_func_2(self):
+        # 这个是抽出来的核心机制
+        exec("from test.fake.fake_core import output_str_func")
+        exec("from test.fake.fake_core import is_input_str_func")
+        func_1 = eval("output_str_func")
+        func_2 = eval("is_input_str_func")
+        output_1 = func_1()
+        output_1_tuple = tuple([])
+        output_1_dict = {"string": output_1}
+        output_2 = func_2(*output_1_tuple, **output_1_dict)
         assert output_2
 
     def test_easy_output_all_str_fun(self):
@@ -85,7 +98,7 @@ class TestFunc(object):
         func_2 = eval("is_input_all_str_func")
         output_1 = func_1(None)
         output_1 = tuple([output_1[0], output_1[1]])
-        output_2 = func_2(*output_1)
+        output_2 = func_2(*output_1, **{})
         assert output_2
 
     def test_output_str_func(self):

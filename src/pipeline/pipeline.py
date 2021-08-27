@@ -1,11 +1,11 @@
 # -*- coding:utf8 -*-
 """
-pipeline负责构建整体计算图：
-（串行拓扑序调度）
+pipeline负责构建（不是执行）整体计算图：
+（当前支持串行拓扑序调度）
 
 1，构建顶层拓扑序（既检查了DAG性，又是串行执行顺序）
 
-2，构建pipenodes
+2，创建pipenodes
 
 3，query方法等
 
@@ -26,12 +26,12 @@ logger = get_logger(__name__)
 
 class Pipeline(object):
     """
-    负责检查并构建计算图，分配对应的pipenode，辅助pipetask执行
+    负责检查并构建计算图，分配对应的pipenode
     TODO：得pickle化落盘，才能在pipeline层面实现restart
     """
 
     def __init__(self, workflow_conf):
-        self.dag_dict = None  # 如果dag表达不够好，未来也可以换成邻接矩阵（adjacency matrix）
+        self.dag_dict = None  # 如果dag表达不够用，未来也可以换成邻接矩阵（adjacency matrix）
         self._topo_order_list = None  # 计算顺序
         self._node_dict = None  # 先把实例化的node存在这里，未来可以考虑使用db
         # config
@@ -47,7 +47,6 @@ class Pipeline(object):
         self._node_dict = self._create_node_dict(workflow_conf)  # 注意，这里的workflow_conf已经被添加prep_nodes了
         # 初始化其他必要信息
 
-    """ 将一些关键变量，设置为属性，不允许调用时，随意更改"""
     @property
     def topo_order_list(self):
         return self._topo_order_list

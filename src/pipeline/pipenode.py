@@ -1,12 +1,13 @@
 # -*- coding:utf8 -*-
 """
-pipenode负责构建单个计算节点：
+pipenode负责维护单个计算节点的所有信息，
+被希望于当需要使用哪个节点明确时，访问对应ppn就可以了：
 
-1，节点信息
+1，构建节点信息
 
-2，实例化函数
+2，更新节点信息
 
-3，next方法等（本来有拓扑序不需要next方法了，这里是为了将来并行异步，做到形式上的统一）
+3，检查节点内函数实例化
 """
 
 from utils.log import get_logger
@@ -95,10 +96,10 @@ class Pipenode(object):
             else:
                 func_r = eval(self.func_des[1])
             del func_r
-            logger.debug("func_r={} checked by import and del".format(self._func_str))
+            logger.debug("func_r={} checked by import and del with node name={}".format(self._func_str, self._name))
         except Exception as e:
             logger.error(e)
-            err_msg = "func_r={} cannot imported".format(self._func_str)
+            err_msg = "func_r={} cannot imported with node_name={}".format(self._func_str, self._name)
             logger.error(err_msg)
             raise Exception(err_msg)
 
@@ -120,8 +121,8 @@ class Pipenode(object):
 
     @inputs.setter
     def inputs(self, inputs):
-        if not isinstance(inputs, list) or not inputs:
-            err_msg = "inputs={} must be a real list".format(inputs)
+        if not isinstance(inputs, list) or not inputs or any(not isinstance(i, str) for i in inputs):
+            err_msg = "inputs={} must be a real str list with node name={}".format(inputs, self._name)
             logger.error(err_msg)
             raise Exception(err_msg)
         self._inputs = inputs
@@ -132,8 +133,8 @@ class Pipenode(object):
 
     @outputs.setter
     def outputs(self, outputs):
-        if not isinstance(outputs, list) or not outputs:
-            err_msg = "outputs={} must be a real list".format(outputs)
+        if not isinstance(outputs, list) or not outputs or any(not isinstance(i, str) for i in outputs):
+            err_msg = "outputs={} must be a real list with node name={}".format(outputs, self._name)
             logger.error(err_msg)
             raise Exception(err_msg)
         self._outputs = outputs
@@ -203,11 +204,12 @@ class Pipenode(object):
             err_msg = "outputs_r={} must be a dict".format(outputs_r)
             logger.error(outputs_r)
             raise Exception(err_msg)
-        for k in outputs_r:
-            if k not in self._outputs:
-                err_msg = "key={} in outputs_r={} must in outputs={}".format(k, outputs_r, self._outputs)
-                logger.error(err_msg)
-                raise Exception(err_msg)
+        # TODO：先注释掉这段保护，目前存的key是经过统一化的，而不是outputs里原始的样子
+        # for k in outputs_r:
+        #     if k not in self._outputs:
+        #         err_msg = "key={} in outputs_r={} must in outputs={}".format(k, outputs_r, self._outputs)
+        #         logger.error(err_msg)
+        #         raise Exception(err_msg)
         self._outputs_r = outputs_r
 
     def _create_with_conf(self, conf):
