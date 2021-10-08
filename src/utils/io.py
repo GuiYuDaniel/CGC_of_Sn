@@ -2,6 +2,7 @@
 
 
 import os
+import pickle
 from functools import lru_cache
 from utils.log import get_logger
 
@@ -66,11 +67,85 @@ class Save(object):
     """
     save data
     """
-    pass
+
+    @staticmethod
+    def save_pickle(data, file_path):
+        # 范围最宽的path检查应由abc.ABC完成，支持str, bytes or os.PathLike object。我们这里仅允许str就够了
+        if not isinstance(file_path, str):
+            err_msg = "file_path={} with type={} must be str when save_pickle".format(file_path, type(file_path))
+            logger.error(err_msg)
+            return False, err_msg
+        folder_path = os.path.dirname(file_path)
+        if not os.path.exists(folder_path):
+            logger.debug("folder_path={} not exist, create it".format(folder_path))
+            os.makedirs(folder_path)
+        if os.path.exists(file_path):
+            err_msg = "file_path={} existed, will not create again, pls check"
+            logger.error(err_msg)
+            return False, err_msg
+        try:
+            with open(file_path, "wb") as f:
+                pickle.dump(data, f)
+                logger.debug("save data={} to db={}".format(data, file_path))
+        except Exception as e:
+            logger.error("save data to file_path={} meet error".format(file_path))
+            logger.error(e)
+            return False, e
+        return True, True
 
 
 class Load(object):
     """
     load data
     """
-    pass
+
+    @staticmethod
+    def load_pickle(file_path):
+        # 范围最宽的path检查应由abc.ABC完成，支持str, bytes or os.PathLike object。我们这里仅允许str就够了
+        if not isinstance(file_path, str):
+            err_msg = "file_path={} with type={} must be str when load_pickle".format(file_path, type(file_path))
+            logger.error(err_msg)
+            return False, err_msg
+        if not os.path.exists(file_path):
+            err_msg = "file_path={} not existed, will not load, pls check"
+            logger.error(err_msg)
+            return False, err_msg
+        if not os.path.isfile(file_path) or file_path[-4:] != ".pkl":  # 先用名字查类型
+            err_msg = "file_path={} must a pkl file, cannot load, pls check".format(file_path)
+            logger.error(err_msg)
+            return False, err_msg
+        try:
+            with open(file_path, "rb") as f:
+                data = pickle.load(f)
+                logger.debug("load data={} from db={}".format(data, file_path))
+        except Exception as e:
+            logger.error("load data from file_path={} meet error".format(file_path))
+            logger.error(e)
+            return False, e
+        return True, data
+
+
+class Delete(object):
+    """
+    delete data
+    """
+
+    @staticmethod
+    def delete_pickle(file_path):
+        # 范围最宽的path检查应由abc.ABC完成，支持str, bytes or os.PathLike object。我们这里仅允许str就够了
+        if not isinstance(file_path, str):
+            err_msg = "file_path={} with type={} must be str when delete_pickle".format(file_path, type(file_path))
+            logger.error(err_msg)
+            return False, err_msg
+        if not os.path.exists(file_path):
+            err_msg = "file_path={} not existed, cannot delete but return True"
+            logger.error(err_msg)
+            return False, err_msg
+        try:
+            os.remove(file_path)
+            logger.debug("delete data from db={}".format(file_path))
+        except Exception as e:
+            logger.error("delete data from file_path={} meet error".format(file_path))
+            logger.error(e)
+            return False, e
+        return True, True

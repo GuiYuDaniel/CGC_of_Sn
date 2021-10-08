@@ -33,3 +33,10 @@ class TestPipeLine(object):
         assert query_all_data.get("topo_order_list") == self.answer_topo_order_1 or \
                query_all_data.get("topo_order_list") == self.answer_topo_order_2
         assert query_all_data.get("dag_dict") == self.answer_calc_dag
+        # import pickle
+        # with open("/Users/guiyu/PycharmProjects/CGC_of_Sn/results/id_test.pkl", "wb") as f:
+        #     pickle.dump(ppl, f)
+        # with open("/Users/guiyu/PycharmProjects/CGC_of_Sn/results/id_test.pkl", "rb") as f:
+        #     data = pickle.load(f)
+        #     print(type(data), data)
+        #     data.query()

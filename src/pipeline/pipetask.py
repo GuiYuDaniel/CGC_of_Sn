@@ -18,7 +18,6 @@ class Pipetask(object):
     """
     真正干活儿的类
     TODO 未来如果需要引入微服务的话，过程中就要只抛错不raise了
-    TODO inputs和outputs中别名的:::保存，转译:去掉
     """
 
     def __init__(self, ppl):

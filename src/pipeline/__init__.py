@@ -13,4 +13,8 @@ pipetask负责执行以及调度
 ppl = Pipeline(conf)  # 创建ppl
 ppt = Pipetask(ppl)  # 创建ppk
 rst = ppt.start(inputs_of_first_node)  # 执行
+
+重启：
+ppt = Pipetask(pipetask_id)  # 根据pipetask_id就可以恢复所有
+rst = ppt.restart(inputs_of_first_node)  # 因为有可能第一个节点就没有运行结束，所以restart和start参数相同，暂时不支持从指定节点重启
 """
