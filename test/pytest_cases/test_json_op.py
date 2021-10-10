@@ -21,7 +21,7 @@ class TestJson(object):
         self.answer_whereami = [{"name": "first_node",
                                  "func": ["None.test.fake.fake_core", "where_am_i", ""],
                                  "type": "cold",
-                                 "inputs": ["cmd_params"],
+                                 "inputs": ["point_path"],
                                  "outputs": ["results"],
                                  "extra_args": [],
                                  "extra_kwargs": {},

@@ -43,15 +43,6 @@ class TmpTyping(LocalDb):
         self.map_id = "id"
 
 
-class TestTyping(object):
-    """
-    test python file typing functions
-    """
-
-    def setup_class(self):
-        pass
-
-
 class TestLocalDb(object):
     """
     test class LocalDb functions
@@ -83,6 +74,13 @@ class TestLocalDb(object):
         self.test_condition_true_same = copy.deepcopy(self.test_condition_true)
         self.test_condition_false = {"id": self.test_data.get("id"), "fake_bool": False}
         self.test_condition_false_same = copy.deepcopy(self.test_condition_false)
+        self.test_wrong_data = {
+            "id": str(uuid.uuid4()),
+
+            "fake_str": 1
+        }
+        self.test_wrong_data_same = copy.deepcopy(self.test_wrong_data)
+        self.test_wrong_condition = {}
 
     def teardown_class(self):
         if os.path.exists(self.db_folder):
@@ -153,13 +151,251 @@ class TestLocalDb(object):
         assert msg is True
 
     def test_insert_wrong(self):
-        pass
+        db_info = TmpTyping()
+        test_id = self.test_wrong_data.get("id")
+        pkl_path = os.path.join(self.db_folder, test_id + ".pkl")
+        flag, msg = db_info.insert(self.test_wrong_data)
+        assert self.test_wrong_data == self.test_wrong_data_same  # 要保证数据不会被变动
+        assert not flag
+        assert isinstance(msg, str)
+        assert not os.path.exists(pkl_path)
 
     def test_update_wrong(self):
-        pass
+        db_info = TmpTyping()
+        # insert
+        flag, msg = db_info.insert(self.test_data)
+        assert self.test_data == self.test_data_same  # 要保证数据不会被变动
+        assert flag
+        assert msg is True
+        # test update wrong
+        wrong_update_data = {
+            "id": self.test_data.get("id"),
+
+            "fake_int": "str"
+        }
+        time.sleep(2)  # 睡两秒，防止秒级时间update和insert一致
+        flag, msg = db_info.update(self.test_condition_true, wrong_update_data)  # 应该找不到
+        assert self.update_data == self.update_data_same
+        assert self.test_data == self.test_data_same
+        assert not flag
+        assert isinstance(msg, str)
+        # 再次query，结果应该与初始insert一致，即保证错误的update不会更改原有db
+        flag, data = db_info.query(self.test_condition_true)
+        assert self.test_condition_true == self.test_condition_true_same
+        assert flag
+        assert data is not False
+        for key in self.test_data:
+            assert key in data
+            assert self.test_data[key] == data.get(key)
+        assert isinstance(data.get("create_time"), str)
+        assert isinstance(data.get("last_write_time"), str)
+        # delete
+        flag, msg = db_info.delete(self.test_condition_true)
+        assert self.test_condition_true == self.test_condition_true_same
+        assert flag
+        assert msg is True
 
     def test_query_wrong(self):
-        pass
+        db_info = TmpTyping()
+        # insert
+        flag, msg = db_info.insert(self.test_data)
+        assert self.test_data == self.test_data_same  # 要保证数据不会被变动
+        assert flag
+        assert msg is True
+        # wrong query
+        flag, data = db_info.query(self.test_wrong_condition)
+        assert not flag
+        assert isinstance(data, str)
+        # delete
+        flag, msg = db_info.delete(self.test_condition_true)
+        assert self.test_condition_true == self.test_condition_true_same
+        assert flag
+        assert msg is True
 
     def test_delete_wrong(self):
-        pass
+        db_info = TmpTyping()
+        # insert
+        test_id = self.test_data.get("id")
+        pkl_path = os.path.join(self.db_folder, test_id + ".pkl")
+        flag, msg = db_info.insert(self.test_data)
+        assert self.test_data == self.test_data_same  # 要保证数据不会被变动
+        assert flag
+        assert msg is True
+        # wrong delete
+        flag, msg = db_info.delete(self.test_wrong_condition)
+        assert not flag
+        assert isinstance(msg, str)
+        assert os.path.exists(pkl_path)
+        # delete
+        flag, msg = db_info.delete(self.test_condition_true)
+        assert self.test_condition_true == self.test_condition_true_same
+        assert flag
+        assert msg is True
+        assert not os.path.exists(pkl_path)
+
+
+class TestTyping(object):
+    """
+    test python file typing.py functions
+    all test ids in this case must be test_<id>
+    """
+
+    def setup_class(self):
+        self.fake_path = Path._get_full_path(relative_path="", base_path_type="top")  # 此处没使用config避免循环引用
+        self.db_folder = os.path.join(self.fake_path, "results", "{}")
+        self.db_folder_list = [self.db_folder.format(i) for i in ["pipeline_info", "pipenode_info", "pipetask_info"]]
+        for db_folder in self.db_folder_list:
+            all_file_name_list = os.listdir(db_folder)
+            all_test_ahead_list = [i for i in all_file_name_list if i.startswith("test_")]
+            for test_file in all_test_ahead_list:
+                os.remove(os.path.join(db_folder, test_file))
+
+        self.test_ppt_data = {
+            "pipetask_id": "test_" + str(uuid.uuid4()),
+
+            "pipeline_id": str(uuid.uuid4()),
+            "finish_node_list": []
+        }
+        self.test_ppt_data_same = copy.deepcopy(self.test_ppt_data)
+        self.test_ppt_condition = {"pipetask_id": self.test_ppt_data.get("pipetask_id")}
+        self.test_ppt_update_data = {"finish_node_list": ["1"]}
+
+        self.test_ppl_data = {
+            "pipeline_id": "test_" + str(uuid.uuid4()),
+            "pipeline_name": "test_pipeline",
+
+            "dag_dict": {},
+            "topo_order_list": [],
+            "config": None,
+            "node_dict": {}
+        }
+        self.test_ppl_data_same = copy.deepcopy(self.test_ppl_data)
+        self.test_ppl_condition = {"pipeline_id": self.test_ppl_data.get("pipeline_id")}
+        self.test_ppl_update_data = {"topo_order_list": ["1"]}
+
+        self.test_ppn_data = {
+            "pipenode_id": "test_" + str(uuid.uuid4()),
+            "pipenode_name": "test_pipenode",
+
+            "func_des": "fake",
+            "func_str": "fake",
+            "type": "cold",
+            "inputs": [],
+            "outputs": [],
+            "next_nodes": [],
+            "prep_nodes": [],
+            "flag": "",
+            "outputs_r": []
+        }
+        self.test_ppn_data_same = copy.deepcopy(self.test_ppn_data)
+        self.test_ppn_condition = {"pipenode_id": self.test_ppn_data.get("pipenode_id")}
+        self.test_ppn_update_data = {"inputs": ["1"]}
+
+    # def teardown_class(self):
+    #     for db_folder in self.db_folder_list:
+    #         all_file_name_list = os.listdir(db_folder)
+    #         all_test_ahead_list = [i for i in all_file_name_list if i.startswith("test_")]
+    #         for test_file in all_test_ahead_list:
+    #             os.remove(os.path.join(db_folder, test_file))
+
+    def test_pipetaskinfo(self):
+        db_info = PipetaskInfo()
+        # test insert
+        flag, msg = db_info.insert(self.test_ppt_data)
+        assert flag
+        assert msg is True
+        file_path = os.path.join(self.db_folder.format("pipetask_info"), self.test_ppt_data.get("pipetask_id") + ".pkl")
+        assert os.path.exists(file_path)
+        # test query
+        flag, data = db_info.query(self.test_ppt_condition)
+        assert flag
+        assert isinstance(data.get("create_time"), str)
+        assert isinstance(data.get("last_write_time"), str)
+        create_time_1 = data.get("create_time")
+        last_write_time_1 = data.get("last_write_time")
+        del data["create_time"]
+        del data["last_write_time"]
+        assert data == self.test_ppt_data_same
+        assert os.path.exists(file_path)
+        # test update
+        time.sleep(2)
+        flag, msg = db_info.update(self.test_ppt_condition, self.test_ppt_update_data)
+        assert flag
+        assert msg is True
+        flag, data_2 = db_info.query(self.test_ppt_condition)
+        assert data_2.get("create_time") == create_time_1
+        assert data_2.get("last_write_time") != last_write_time_1
+        assert data_2.get("finish_node_list") == self.test_ppt_update_data.get("finish_node_list")
+        # test delete
+        flag, msg = db_info.delete(self.test_ppt_condition)
+        assert flag
+        assert msg is True
+        assert not os.path.exists(file_path)
+
+    def test_pipenodeinfo(self):
+        db_info = PipenodeInfo()
+        # test insert
+        flag, msg = db_info.insert(self.test_ppn_data)
+        assert flag
+        assert msg is True
+        file_path = os.path.join(self.db_folder.format("pipenode_info"), self.test_ppn_data.get("pipenode_id") + ".pkl")
+        assert os.path.exists(file_path)
+        # test query
+        flag, data = db_info.query(self.test_ppn_condition)
+        assert flag
+        assert isinstance(data.get("create_time"), str)
+        assert isinstance(data.get("last_write_time"), str)
+        create_time_1 = data.get("create_time")
+        last_write_time_1 = data.get("last_write_time")
+        del data["create_time"]
+        del data["last_write_time"]
+        assert data == self.test_ppn_data_same
+        assert os.path.exists(file_path)
+        # test update
+        time.sleep(2)
+        flag, msg = db_info.update(self.test_ppn_condition, self.test_ppn_update_data)
+        assert flag
+        assert msg is True
+        flag, data_2 = db_info.query(self.test_ppn_condition)
+        assert data_2.get("create_time") == create_time_1
+        assert data_2.get("last_write_time") != last_write_time_1
+        assert data_2.get("inputs") == self.test_ppn_update_data.get("inputs")
+        # test delete
+        flag, msg = db_info.delete(self.test_ppn_condition)
+        assert flag
+        assert msg is True
+        assert not os.path.exists(file_path)
+
+    def test_pipelineinfo(self):
+        db_info = PipelineInfo()
+        # test insert
+        flag, msg = db_info.insert(self.test_ppl_data)
+        assert flag
+        assert msg is True
+        file_path = os.path.join(self.db_folder.format("pipeline_info"), self.test_ppl_data.get("pipeline_id") + ".pkl")
+        assert os.path.exists(file_path)
+        # test query
+        flag, data = db_info.query(self.test_ppl_condition)
+        assert flag
+        assert isinstance(data.get("create_time"), str)
+        assert isinstance(data.get("last_write_time"), str)
+        create_time_1 = data.get("create_time")
+        last_write_time_1 = data.get("last_write_time")
+        del data["create_time"]
+        del data["last_write_time"]
+        assert data == self.test_ppl_data_same
+        assert os.path.exists(file_path)
+        # test update
+        time.sleep(2)
+        flag, msg = db_info.update(self.test_ppl_condition, self.test_ppl_update_data)
+        assert flag
+        assert msg is True
+        flag, data_2 = db_info.query(self.test_ppl_condition)
+        assert data_2.get("create_time") == create_time_1
+        assert data_2.get("last_write_time") != last_write_time_1
+        assert data_2.get("topo_order_list") == self.test_ppl_update_data.get("topo_order_list")
+        # test delete
+        flag, msg = db_info.delete(self.test_ppl_condition)
+        assert flag
+        assert msg is True
+        assert not os.path.exists(file_path)

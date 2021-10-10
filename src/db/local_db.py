@@ -89,7 +89,6 @@ class LocalDb(object):
         if add_create_time:
             table["create_time"] = time_now
         table["last_write_time"] = time_now
-        logger.info("$$$$$ add last_write_time={}".format(time_now))
 
     def _insert(self, table, add_create_time=True):  # 这里加add_create_time是为了实现假的update，使用的权宜之计，对外不可见
         # insert要根据design_table_type检查table
@@ -122,12 +121,13 @@ class LocalDb(object):
         2，合法：未找到结果，没有更新，但也没错误。返回True，False
         3，非法：有报错。返回False，err_msg
         """
+        # TODO update要增加一个id检查，不可以修改id的
         flag, table = self.query(condition)  # 对于condition的常规检查，query里也有，所有本函数中可以免去
         if not flag:
             return flag, table  # 此时table是errmsg
         if table is False:
             err_msg = "cannot find table by condition={}, will not update".format(condition)
-            logger.warn(err_msg)
+            logger.warning(err_msg)
             logger.debug("it maybe a wrong event with unexpected file_path,"
                          "or maybe a right event with only find no result")
             return True, False
@@ -142,11 +142,11 @@ class LocalDb(object):
         # TODO 删和存最好使用原子化操作，最简单的就没考虑那么多，也没加回档，只能前面尽量检查好
         flag, msg = self.delete(condition)
         if not flag:
-            logger.warn("DANGEROUS error! a non-atomized operation may happen")
+            logger.warning("DANGEROUS error! a non-atomized operation may happen")
             return flag, msg
         flag, msg = self._insert(table, add_create_time=False)
         if not flag:
-            logger.warn("DANGEROUS error! a non-atomized operation may happen")
+            logger.warning("DANGEROUS error! a non-atomized operation may happen")
             return flag, msg
         return True, True
 
@@ -157,12 +157,12 @@ class LocalDb(object):
         2，合法：未找到结果，没有删除。返回True，False
         3，非法：有报错。返回False，err_msg
         """
-        flag, table = self.query(condition)  # 对于condition的常规检查，query里也有，所有本函数中可以免去
+        flag, table = self.query(condition)  # 对于condition的常规检查，query里也有，所以本函数中可以免去
         if not flag:
             return flag, table  # 此时table是errmsg
         if flag and (table is False):
             err_msg = "file_path={} not existed, cannot delete but return True"
-            logger.warn(err_msg)
+            logger.warning(err_msg)
             logger.debug("it maybe a wrong event with unexpected file_path,"
                          "or maybe a right event with only find no result")
             return True, False
