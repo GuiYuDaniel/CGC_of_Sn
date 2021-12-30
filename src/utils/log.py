@@ -6,6 +6,8 @@ TODO 也可以把log注入StreamHandler，主动触发的时候才写log，手�
 """
 
 
+# TODO 尝试引入colorlog参照https://www.cnblogs.com/-wenli/p/13402244.html修改formatters和getLogger后接一句代码
+# import colorlog
 import time
 import os
 import logging

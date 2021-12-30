@@ -73,8 +73,8 @@ class LocalDb(object):
                 return False, err_msg
             if self.design_table_type.get(key) is not None \
                     and not isinstance(table[key], self.design_table_type.get(key)):
-                err_msg = "value={} with type={} of key={} in table not by design_table_type={}".format(
-                    table[key], type(table[key]), key, table, self.design_table_type)
+                err_msg = "key={}, value={} with type={} in table={} not by design_table_type={}".format(
+                    key, table[key], type(table[key]), table, self.design_table_type)
                 logger.error(err_msg)
                 return False, err_msg
             if appear_time_return_false and (key in ["create_time", "last_write_time"]):  # 作用于输入的table检查，检查之后再加
@@ -112,6 +112,9 @@ class LocalDb(object):
         """
         return self._insert(table)
 
+    def update_by_id(self, table_id, partial_table):
+        return self.update({self.map_id: table_id}, partial_table)
+
     def update(self, condition, partial_table):
         """
         本update的逻辑是：根据condition找数据，按照partial_table里的内容，只更新对应的，没提到的不变
@@ -121,7 +124,6 @@ class LocalDb(object):
         2，合法：未找到结果，没有更新，但也没错误。返回True，False
         3，非法：有报错。返回False，err_msg
         """
-        # TODO update要增加一个id检查，不可以修改id的
         flag, table = self.query(condition)  # 对于condition的常规检查，query里也有，所有本函数中可以免去
         if not flag:
             return flag, table  # 此时table是errmsg
@@ -134,6 +136,11 @@ class LocalDb(object):
         flag, msg = self._check_table_key_and_value_type_in_design(partial_table, appear_time_return_false=True)
         if not flag:
             return flag, msg
+        if partial_table.get(self.map_id) and table.get(self.map_id) != partial_table.get(self.map_id):
+            err_msg = "non-support update {}, id={} of table must same as id={} of partial_table".format(
+                self.map_id, table.get(self.map_id), partial_table.get(self.map_id))
+            logger.error(err_msg)
+            return False, err_msg
         table.update(partial_table)
         flag, msg = self._check_table_key_and_value_type_in_design(table, appear_time_return_false=False)  # table里是有时间的
         if not flag:
@@ -149,6 +156,9 @@ class LocalDb(object):
             logger.warning("DANGEROUS error! a non-atomized operation may happen")
             return flag, msg
         return True, True
+
+    def delete_by_id(self, table_id):
+        return self.delete({self.map_id: table_id})
 
     def delete(self, condition):
         """
@@ -174,10 +184,14 @@ class LocalDb(object):
             return flag, msg
         return True, True
 
+    def query_by_id(self, table_id):
+        return self.query({self.map_id: table_id})
+
     def query(self, condition):
         """
         这里query有三种可能结果：
-        1，合法：找到一个结果。返回True，data
+服务于这里的query是先拿id找符合condition的，所以不应出现多个结果
+        1，合法：找到一个结果。返回True，data(dict)
         2，合法：未找到结果。返回True，False
         3，非法：有报错。返回False，err_msg
         """

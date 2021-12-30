@@ -11,6 +11,10 @@ import time
 
 def merge(param_1, param_2, flag=True):
     if flag:
+        sleep_time = 1
+        print("will sleep {}s".format(sleep_time))
+        time.sleep(sleep_time)
+        print("sleep {}s end".format(sleep_time))
         rst = str(param_1)+str(param_2)
     else:
         rst = False
@@ -19,6 +23,10 @@ def merge(param_1, param_2, flag=True):
 
 def self_defined_print(print_str, flag=True):
     if flag:
+        sleep_time = 1
+        print("will sleep {}s".format(sleep_time))
+        time.sleep(sleep_time)
+        print("sleep {}s end".format(sleep_time))
         print(print_str)
         return flag
     else:
@@ -38,6 +46,7 @@ def who_am_i(uid):
         try:
             pw_name = pwd.getpwuid(uid).pw_name
         except Exception as e:
+            print(e)
             print("Cannot use uid to get user name, we will use another method")
             pw_name = pwd.getpwuid(os.getuid()).pw_name
     else:
@@ -52,6 +61,10 @@ def where_am_i(normal_flag=True, point_path=None):
     :return: the path of this function or point_path
     """
     if normal_flag:
+        sleep_time = 1
+        print("will sleep {}s".format(sleep_time))
+        time.sleep(sleep_time)
+        print("sleep {}s end".format(sleep_time))
         if not point_path:
             path = os.getcwd()
         else:
@@ -64,6 +77,10 @@ def where_am_i(normal_flag=True, point_path=None):
 def what_is_the_time_now(flag=True):
     if flag:
         asc_time = time.asctime()
+        sleep_time = 1
+        print("will sleep {}s".format(sleep_time))
+        time.sleep(sleep_time)
+        print("sleep {}s end".format(sleep_time))
     else:
         return False
     return asc_time

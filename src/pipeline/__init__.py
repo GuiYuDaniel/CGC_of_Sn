@@ -9,12 +9,14 @@ pipeline负责构建整体计算图
 pipenode负责构建单个计算节点
 pipetask负责执行以及调度
 
+pipe构建中可以抛错并中断，但执行任务过程中，函数务必执行到底直到状态改变为成功、失败、中断等结束状态
+
 调用时：
-ppl = Pipeline(conf)  # 创建ppl
-ppt = Pipetask(ppl)  # 创建ppk
-rst = ppt.start(inputs_of_first_node)  # 执行
+ppl = PipeLine(workflow_conf=conf, ppl_name=xxx, ppl_id=yyy)  # 创建ppl
+ppt = PipeTask(ppl)  # 创建ppk
+status, msg = ppt.start(inputs_of_first_node)  # 执行
 
 重启：
-ppt = Pipetask(pipetask_id)  # 根据pipetask_id就可以恢复所有
-rst = ppt.restart(inputs_of_first_node)  # 因为有可能第一个节点就没有运行结束，所以restart和start参数相同，暂时不支持从指定节点重启
+ppt = PipeTask().load_by_id(ppt_id)  # 根据pipetask_id就可以恢复所有
+status, msg = ppt.restart()  # 可重启的pipetask必须通过preparation阶段，此时一切运行必要信息都已计算和保存
 """

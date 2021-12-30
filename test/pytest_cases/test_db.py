@@ -12,9 +12,10 @@ import time
 import pytest
 import uuid
 from db.local_db import LocalDb
-from db.typing import PipetaskInfo, PipenodeInfo, PipelineInfo
+from db.typing import PipeTaskInfo, PipeNodeInfo, PipeLineInfo
 from utils.io import Path
 from utils.log import get_logger
+from utils.utils import PipeTaskStatus
 
 
 logger = get_logger(__name__)
@@ -70,6 +71,7 @@ class TestLocalDb(object):
         self.test_data_same = copy.deepcopy(self.test_data)
         self.update_data = {"fake_bool": False}
         self.update_data_same = copy.deepcopy(self.update_data)
+        self.update_data_wrong = {"fake_bool": False, "id": str(uuid.uuid4())}
         self.test_condition_true = {"id": self.test_data.get("id"), "fake_bool": True}
         self.test_condition_true_same = copy.deepcopy(self.test_condition_true)
         self.test_condition_false = {"id": self.test_data.get("id"), "fake_bool": False}
@@ -115,6 +117,9 @@ class TestLocalDb(object):
         assert self.test_data == self.test_data_same
         assert flag
         assert msg is False
+        flag, msg = db_info.update(self.test_condition_true, self.update_data_wrong)  # 应该找得到但禁止更新
+        assert not flag
+        assert isinstance(msg, str)
         flag, msg = db_info.update(self.test_condition_true, self.update_data)  # 应该得到
         assert self.update_data == self.update_data_same
         assert self.test_data == self.test_data_same
@@ -254,7 +259,9 @@ class TestTyping(object):
             "pipetask_id": "test_" + str(uuid.uuid4()),
 
             "pipeline_id": str(uuid.uuid4()),
-            "finish_node_list": []
+            "finish_node_list": [],
+            "pipetask_status": PipeTaskStatus.PREPARATION.name,
+            "flags": None
         }
         self.test_ppt_data_same = copy.deepcopy(self.test_ppt_data)
         self.test_ppt_condition = {"pipetask_id": self.test_ppt_data.get("pipetask_id")}
@@ -267,7 +274,8 @@ class TestTyping(object):
             "dag_dict": {},
             "topo_order_list": [],
             "config": None,
-            "node_dict": {}
+            "node_id_dict": {},
+            "flags": None
         }
         self.test_ppl_data_same = copy.deepcopy(self.test_ppl_data)
         self.test_ppl_condition = {"pipeline_id": self.test_ppl_data.get("pipeline_id")}
@@ -284,22 +292,22 @@ class TestTyping(object):
             "outputs": [],
             "next_nodes": [],
             "prep_nodes": [],
-            "flag": "",
-            "outputs_r": []
+            "outputs_r": {},
+            "flags": ""
         }
         self.test_ppn_data_same = copy.deepcopy(self.test_ppn_data)
         self.test_ppn_condition = {"pipenode_id": self.test_ppn_data.get("pipenode_id")}
         self.test_ppn_update_data = {"inputs": ["1"]}
 
-    # def teardown_class(self):
-    #     for db_folder in self.db_folder_list:
-    #         all_file_name_list = os.listdir(db_folder)
-    #         all_test_ahead_list = [i for i in all_file_name_list if i.startswith("test_")]
-    #         for test_file in all_test_ahead_list:
-    #             os.remove(os.path.join(db_folder, test_file))
+    def teardown_class(self):
+        for db_folder in self.db_folder_list:
+            all_file_name_list = os.listdir(db_folder)
+            all_test_ahead_list = [i for i in all_file_name_list if i.startswith("test_")]
+            for test_file in all_test_ahead_list:
+                os.remove(os.path.join(db_folder, test_file))
 
     def test_pipetaskinfo(self):
-        db_info = PipetaskInfo()
+        db_info = PipeTaskInfo()
         # test insert
         flag, msg = db_info.insert(self.test_ppt_data)
         assert flag
@@ -333,7 +341,7 @@ class TestTyping(object):
         assert not os.path.exists(file_path)
 
     def test_pipenodeinfo(self):
-        db_info = PipenodeInfo()
+        db_info = PipeNodeInfo()
         # test insert
         flag, msg = db_info.insert(self.test_ppn_data)
         assert flag
@@ -367,7 +375,7 @@ class TestTyping(object):
         assert not os.path.exists(file_path)
 
     def test_pipelineinfo(self):
-        db_info = PipelineInfo()
+        db_info = PipeLineInfo()
         # test insert
         flag, msg = db_info.insert(self.test_ppl_data)
         assert flag
