@@ -10,61 +10,81 @@ pipenode负责维护单个计算节点的所有信息，
 3，检查节点内函数实例化
 """
 
+from db.typing import PipeNodeInfo
 from utils.log import get_logger
+from utils.utils import new_id
 
 
 logger = get_logger(__name__)
 
 
-class Pipenode(object):
+class PipeNode(object):
     """
     pipenode负责记录节点信息，由pipeline负责初始化。是计算到具体节点时，供pipetask访问的对象
-    TODO time的记录
-    TODO 暂不考虑动态装载func，即默认所有func都是存在于项目中，存在于已有PYTHONPATH里
+    pipeline在新建后，随任务改变的量有：outputs_r
+    TODO 暂不考虑动态装载func，且默认所有func都是静态存在于项目中，存在于已有PYTHONPATH里
     """
 
-    def __init__(self, conf):
-        self._name = None
+    def __init__(self, conf=None, ppn_id=None):
+        self._ppn_id = ppn_id if ppn_id and isinstance(ppn_id, str) else None
+        self._ppn_name = None
         self._func_des = None
         self._func_str = None
         self._type = None
         self._inputs = None
         self._outputs = None
-        self._extra_args = None  # todo
-        self._extra_kwargs = None  # todo
+        # self._extra_args = None  # todo
+        # self._extra_kwargs = None  # todo
         self._next_nodes = None
         self._prep_nodes = None
-        self._flags = None
         self._outputs_r = None  # 用_r区分实际变量与描述性变量
-
-        self._create_with_conf(conf)
+        self._flags = None
+        if conf:
+            self._create_with_conf(conf=conf, ppn_id=ppn_id)
+            self.check_node()
+            _, _ = self.save_to_db()
 
     '''这个类所有参数都不应该被随意更改'''
 
     @property
-    def name(self):
-        return self._name
+    def ppn_id(self):
+        return self._ppn_id
 
-    @name.setter
-    def name(self, name):
-        # name需要为str
-        if name is None or not isinstance(name, str):
-            err_msg = "name={} must be str".format(name)
+    @ppn_id.setter
+    def ppn_id(self, ppn_id):
+        if ppn_id is not None and not isinstance(ppn_id, str):
+            err_msg = "ppn_id={} must be None or str".format(ppn_id)
             logger.error(err_msg)
             raise Exception(err_msg)
-        self._name = name
+        self._ppn_id = ppn_id
+
+    @property
+    def ppn_name(self):
+        return self._ppn_name
+
+    @ppn_name.setter
+    def ppn_name(self, ppn_name):
+        if ppn_name is not None and not isinstance(ppn_name, str):
+            err_msg = "name={} must be None or str".format(ppn_name)
+            logger.error(err_msg)
+            raise Exception(err_msg)
+        self._ppn_name = ppn_name
 
     @property
     def func_des(self):
         return self._func_des
 
     @func_des.setter
-    def func_des(self, func):  # func在ppnode里存描述，便于未来落盘需要
-        # func要求是形式上确保将来可以form xx import yy as zz
-        if not isinstance(func, list) or len(func) != 3 or \
-                any(not isinstance(i, str) for i in func):
-            err_msg = "func={} must a len 3 list, and like ['None.xxx', 'yyy', 'zzz'] or ['xxx', 'yyy', 'zzz']" \
-                      "in order to form xxx import yyy as zzz".format(func)
+    def func_des(self, func):  # 在ppn里存func描述，便于落盘需要
+        """
+        func形如：['None.xx', 'yy', 'zz'] 或 ['xx', 'yy', 'zz']，
+        使得后面代码可以造出form xx import yy as zz
+        """
+        if func is not None \
+                and (not isinstance(func, list) or len(func) != 3 or
+                     any(not isinstance(i, str) for i in func)):
+            err_msg = "func={} must None or a len 3 list, like ['None.xx', 'yy', 'zz'] or ['xx', 'yy', 'zz']" \
+                      "in order translate to: form xx import yy as zz".format(func)
             logger.error(err_msg)
             raise Exception(err_msg)
         self._func_des = func
@@ -96,10 +116,10 @@ class Pipenode(object):
             else:
                 func_r = eval(self.func_des[1])
             del func_r
-            logger.debug("func_r={} checked by import and del with node name={}".format(self._func_str, self._name))
+            logger.debug("func_r={} checked by import and del with node name={}".format(self._func_str, self._ppn_name))
         except Exception as e:
             logger.error(e)
-            err_msg = "func_r={} cannot imported with node_name={}".format(self._func_str, self._name)
+            err_msg = "func_r={} cannot imported with node_name={}".format(self._func_str, self._ppn_name)
             logger.error(err_msg)
             raise Exception(err_msg)
 
@@ -109,7 +129,7 @@ class Pipenode(object):
 
     @type.setter
     def type(self, type_):
-        if type_ != "cold":
+        if type_ is not None and type_ != "cold":
             err_msg = "type={} now only support ['cold']".format(type_)
             logger.error(err_msg)
             raise Exception(err_msg)
@@ -121,8 +141,9 @@ class Pipenode(object):
 
     @inputs.setter
     def inputs(self, inputs):
-        if not isinstance(inputs, list) or not inputs or any(not isinstance(i, str) for i in inputs):
-            err_msg = "inputs={} must be a real str list with node name={}".format(inputs, self._name)
+        if inputs is not None \
+                and (not isinstance(inputs, list) or not inputs or any(not isinstance(i, str) for i in inputs)):
+            err_msg = "inputs={} must be a real str list with node name={}".format(inputs, self._ppn_name)
             logger.error(err_msg)
             raise Exception(err_msg)
         self._inputs = inputs
@@ -133,19 +154,20 @@ class Pipenode(object):
 
     @outputs.setter
     def outputs(self, outputs):
-        if not isinstance(outputs, list) or not outputs or any(not isinstance(i, str) for i in outputs):
-            err_msg = "outputs={} must be a real list with node name={}".format(outputs, self._name)
+        if outputs is not None \
+                and (not isinstance(outputs, list) or not outputs or any(not isinstance(i, str) for i in outputs)):
+            err_msg = "outputs={} must be a real list with node name={}".format(outputs, self._ppn_name)
             logger.error(err_msg)
             raise Exception(err_msg)
         self._outputs = outputs
 
-    @property
-    def extra_args(self):
-        return self._extra_args
-
-    @property
-    def extra_kwargs(self):
-        return self._extra_kwargs
+    # @property
+    # def extra_args(self):
+    #     return self._extra_args
+    #
+    # @property
+    # def extra_kwargs(self):
+    #     return self._extra_kwargs
 
     @property
     def next_nodes(self):
@@ -154,16 +176,11 @@ class Pipenode(object):
     @next_nodes.setter
     def next_nodes(self, next_nodes):
         # next_nodes要求是列表，元素是str
-        if not isinstance(next_nodes, list):
-            err_msg = "next_nodes={} must be a list".format(next_nodes)
+        if next_nodes is not None \
+                and (not isinstance(next_nodes, list) or any(not isinstance(i, str) for i in next_nodes)):
+            err_msg = "next_nodes={} can only be None or str list"
             logger.error(err_msg)
             raise Exception(err_msg)
-        for name in next_nodes:
-            if not isinstance(name, str):
-                err_msg = "elements={} in next_nodes={} must str".format(name, next_nodes)
-                logger.error(err_msg)
-                raise Exception(err_msg)
-                # break
         self._next_nodes = next_nodes
 
     @property
@@ -173,16 +190,11 @@ class Pipenode(object):
     @prep_nodes.setter
     def prep_nodes(self, prep_nodes):
         # prep_nodes要求是列表，元素是str
-        if not isinstance(prep_nodes, list):
-            err_msg = "prep_nodes={} must be a list".format(prep_nodes)
+        if prep_nodes is not None \
+                and (not isinstance(prep_nodes, list) or any(not isinstance(i, str) for i in prep_nodes)):
+            err_msg = "prep_nodes={} can only be None or str list"
             logger.error(err_msg)
             raise Exception(err_msg)
-        for name in prep_nodes:
-            if not isinstance(name, str):
-                err_msg = "elements={} in prep_nodes={} must str".format(name, prep_nodes)
-                logger.error(err_msg)
-                raise Exception(err_msg)
-                # break
         self._prep_nodes = prep_nodes
 
     @property
@@ -200,24 +212,111 @@ class Pipenode(object):
 
     @outputs_r.setter
     def outputs_r(self, outputs_r):
-        if not isinstance(outputs_r, dict):
-            err_msg = "outputs_r={} must be a dict".format(outputs_r)
+        # 参数命名方式和存取枚举:
+        # 命名方式  例子               存                     取
+        # 三段形式  p1:::flag:f_name  {"p1:::flag": value}  {"f_name": value}
+        # 省略尾段  p1:::flag         {"p1:::flag": value}  {"flag": value}
+        # 省略前缀  flag:f_name       {"flag": value}       {"f_name": value}
+        # 一段形式  flag              {"flag": value}       {"flag": value}
+        # 本函数返回原则：
+        # 保存参数名：前缀+管道参数 > 管道参数
+        # 使用参数名：函数参数 > 管道参数
+        # 详见 CGC_of_Sn/src/pipeline/pipetask.py:_analysis_param_name
+        if outputs_r is not None and not isinstance(outputs_r, dict):
+            err_msg = "outputs_r={} must be None or dict".format(outputs_r)
             logger.error(outputs_r)
             raise Exception(err_msg)
-        # TODO：先注释掉这段保护，目前存的key是经过统一化的，而不是outputs里原始的样子
-        # for k in outputs_r:
-        #     if k not in self._outputs:
-        #         err_msg = "key={} in outputs_r={} must in outputs={}".format(k, outputs_r, self._outputs)
-        #         logger.error(err_msg)
-        #         raise Exception(err_msg)
         self._outputs_r = outputs_r
 
-    def _create_with_conf(self, conf):
-        if not isinstance(conf, dict):
-            err_msg = "pipenode conf={} must be a dict".format(conf)
+    def _from_dict(self, ppn_dict):
+        if not isinstance(ppn_dict, dict):
+            err_msg = "_from_dict need input dict but {} with {}".format(type(ppn_dict), ppn_dict)
             logger.error(err_msg)
             raise Exception(err_msg)
-        self.name = conf.get("name")
+        # todo 用__dict__装载，会导致绕过setter检查，在找到解决办法之前先用if
+        # map_dict = {
+        #     "pipenode_id": "ppn_id",
+        #     "pipenode_name": "ppn_name",
+        #
+        #     "func_des": "func_des",
+        #     "func_str": "func_str",
+        #     "type": "type",
+        #     "inputs": "inputs",
+        #     "outputs": "outputs",
+        #     "next_nodes": "next_nodes",
+        #     "prep_nodes": "prep_nodes",
+        #     "flags": "flag",
+        #     "outputs_r": "outputs_r"
+        # }
+        # self_keys = self.__dict__.keys()
+        # for map_key in map_dict:
+        #     if ppn_dict.get(map_key) and map_dict.get(map_key) in self_keys:
+        #         self.__dict__[map_dict.get(map_key)] = ppn_dict.get(map_key)
+        ppn_keys = ppn_dict.keys()
+        self.ppn_id = ppn_dict.get("pipenode_id") if "pipenode_id" in ppn_keys else None
+        self.ppn_name = ppn_dict.get("pipenode_name") if "pipenode_name" in ppn_keys else None
+        self.func_des = ppn_dict.get("func_des") if "func_des" in ppn_keys else None
+        self._func_str = ppn_dict.get("func_str") if "func_str" in ppn_keys else None
+        self.type = ppn_dict.get("type") if "type" in ppn_keys else None
+        self.inputs = ppn_dict.get("inputs") if "inputs" in ppn_keys else None
+        self.outputs = ppn_dict.get("outputs") if "outputs" in ppn_keys else None
+        self.next_nodes = ppn_dict.get("next_nodes") if "next_nodes" in ppn_keys else None
+        self.prep_nodes = ppn_dict.get("prep_nodes") if "prep_nodes" in ppn_keys else None
+        self.outputs_r = ppn_dict.get("outputs_r") if "outputs_r" in ppn_keys else None
+        self.flags = ppn_dict.get("flags") if "flags" in ppn_keys else None
+
+    def load_by_id(self, ppn_id):
+        """成功则返回通过id装载起的类实例，失败则返回空实例"""
+        if not isinstance(ppn_id, str):
+            err_msg = "the ppn_id={} must be str, will return blank class".format(ppn_id)
+            logger.error(err_msg)
+            # 返回未经改动的实例
+            return self
+        flag, ppn_dict = PipeNodeInfo().query_by_id(ppn_id)
+        if not flag:
+            err_msg = "query pipeline by ppn_id={} meet error with {}, will return blank class".format(
+                ppn_id, ppn_dict)  # 此时ppn_dict是msg
+            logger.error(err_msg)
+            return self
+        if ppn_dict is False:
+            err_msg = "no pipeline in db by ppn_id={}, will return blank class".format(ppn_id)
+            logger.warning(err_msg)
+            return self
+        self._from_dict(ppn_dict)
+        return self
+
+    def _to_dict(self):
+        ppn_dict = {
+            "pipenode_id": self.ppn_id,
+            "pipenode_name": self.ppn_name,
+
+            "func_des": self.func_des,
+            "func_str": self.func_str,
+            "type": self.type,
+            "inputs": self.inputs,
+            "outputs": self.outputs,
+            "next_nodes": self.next_nodes,
+            "prep_nodes": self.prep_nodes,
+            "flags": self.flags,
+            "outputs_r": self.outputs_r
+        }
+        return ppn_dict
+
+    def save_to_db(self):  # 不需要写try，因为db交互层已经写好了保护和log，只需要返回结果即可
+        ppn_dict = self._to_dict()
+        flag, msg = PipeNodeInfo().insert(ppn_dict)
+        if not flag:
+            err_msg = "save ppn_dict={} to db meet error".format(ppn_dict)
+            logger.error(err_msg)
+        return flag, msg
+
+    def _create_with_conf(self, conf=None, ppn_id=None):
+        if not isinstance(conf, dict):
+            err_msg = "create pipenode need real dict conf={}".format(conf)
+            logger.error(err_msg)
+            raise Exception(err_msg)
+        self.ppn_id = ppn_id if ppn_id and isinstance(ppn_id, str) else new_id()
+        self.ppn_name = conf.get("name")
         self.func_des = conf.get("func")
         self._set_func_str()  # self.func_str
         self.type = conf.get("type")
@@ -227,30 +326,5 @@ class Pipenode(object):
         # self.extra_kwargs = None  # todo
         self.next_nodes = conf.get("next_nodes")
         self.prep_nodes = conf.get("prep_nodes")
-        self.flags = conf.get("flags")
         self.outputs_r = {}
-
-    def query(self, name="all"):
-        name_list = ["all", "name", "func_des", "func_str", "type", "inputs", "outputs",
-                     "next_nodes", "prep_nodes", "flags", "outputs_r"]
-        if name not in name_list:
-            rst = {"err_msg": "query name={} must in {}".format(name, name_list)}
-            logger.debug("query pipenode={} with name={}".format(rst, name))
-            return rst
-        if name == "all":
-            rst = {"name": self.name,
-                   "func_des": self.func_des,
-                   "func_str": self.func_str,
-                   "type": self.type,
-                   "inputs": self.inputs,
-                   "outputs": self.outputs,
-                   "next_nodes": self.next_nodes,
-                   "prep_nodes": self.prep_nodes,
-                   "outputs_r": self.outputs_r,
-                   "flags": self.flags}
-            logger.debug("query pipenode={} with name={}".format(rst, name))
-            return rst
-        else:
-            rst = {name: eval("self.{}".format(name))}
-            logger.debug("query pipenode={} with name={}".format(rst, name))
-            return rst
+        self.flags = conf.get("flags")

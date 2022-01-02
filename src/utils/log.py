@@ -6,6 +6,7 @@ TODO 也可以把log注入StreamHandler，主动触发的时候才写log，手�
 """
 
 
+# import colorlog
 import time
 import os
 import logging
