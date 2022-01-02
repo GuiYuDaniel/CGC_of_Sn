@@ -19,7 +19,7 @@ from utils.utils import PipeTaskStatus
 logger = get_logger(__name__)
 
 
-@pytest.mark.skip("pass")
+# @pytest.mark.skip("pass")
 class TestPipeTask(object):
     """
     主要是测试pipetask的流程问题，使用一个具有代表性，尽可能全面的workflow来测
@@ -115,7 +115,6 @@ class TestPipeTask(object):
                 logger.warning("find ppt_id={} still exists, remove it".format(appeared_id))
                 os.remove(file_path)
 
-    @pytest.mark.skip("pass")
     def test_pipetask_create(self):
         ppl = PipeLine(workflow_conf=self.fake_workflow_conf,
                        ppl_name="test_pipeline_all",
@@ -146,7 +145,6 @@ class TestPipeTask(object):
         assert query_data.get("pipeline_id") == ppl_id
         assert query_data.get("finish_node_list") == ppt.finish_node_list
 
-    # @pytest.mark.skip("pass")
     def test_pipetask_restart_1(self):
         """stop at first node(1)
         [1][2][354][6][7]"""
@@ -171,7 +169,6 @@ class TestPipeTask(object):
         assert query_data.get("pipeline_id") == ppl_id
         assert query_data.get("finish_node_list") == ppt.finish_node_list
 
-    # @pytest.mark.skip("pass")
     def test_pipetask_restart_2(self):
         """stop at middle node(5)
         [1][2][354][6][7]"""
@@ -221,7 +218,7 @@ class TestPipeTask(object):
         assert query_data.get("finish_node_list") == ppt.finish_node_list
 
 
-@pytest.mark.skip("pass")
+# @pytest.mark.skip("pass")
 class TestSpecialWorkflow(object):
     """
     一些特别的function，写成workflow，在这里测试

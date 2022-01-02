@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 """
 python module logging 对应的配置文件，使用py格式而不是json，是为了方便传递
+TODO 未来把log的落盘配置写在config里，只留一个需修改文件
 """
+
 
 logging_config = {
     "version": 1,
     "disable_existing_loggers": True,
     "formatters": {
         "simple": {
-            "format": "%(levelname)s %(message)s"
-        },
-        "standard": {
-            "format": "[%(asctime)s] %(levelname)s %(message)s [%(funcName)s:%(lineno)d]",
-            "datefmt": "%Y-%m-%d %H:%M:%S"
+            "()": "colorlog.ColoredFormatter",
+            "format": "%(log_color)s [%(levelname)s] %(message)s"
         },
         "verbose": {
-            "format": "[%(asctime)s] %(levelname)s %(message)s [%(filename)s:%(funcName)s:%(lineno)d]",
+            "()": "colorlog.ColoredFormatter",
+            "format": "%(log_color)s <%(asctime)s> [%(levelname)s] %(message)s [%(filename)s:%(funcName)s:%(lineno)d]",
             "datefmt": "%Y-%m-%d %H:%M:%S"
         }
     },
@@ -29,7 +29,6 @@ logging_config = {
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "formatter": "verbose",
-            # TODO 未来把log的落盘配置写在config里，只留一个需修改文件
             "filename": "logs/log.txt",
             "encoding": "utf8"
         }
@@ -37,7 +36,6 @@ logging_config = {
     "loggers": {
         "": {
             "handlers": ["console", "file_handler"],
-            # TODO 未来把log的level配置写在config里，只留一个需修改文件
             "level": "DEBUG"
         }
     }
