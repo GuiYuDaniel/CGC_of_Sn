@@ -1,2 +1,2 @@
-# CGC_of_Sn
-The Calculation of the Isoscalar Factors and the Clebsch-Gordan Coefficients of Permutation Group Sn
+# abstract
+A general pipeline code for executing functions by defined workflow.
